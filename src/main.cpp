@@ -5,24 +5,21 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_GPS.h>
 
-
 Adafruit_LIS3MDL lis3mdl;
 Adafruit_ISM330DHCX ism330dhcx;
 Adafruit_GPS gps(&Serial1);
 
-
 void setup(void)
 {
   Serial.begin(115200);
-  while (!Serial)
-    delay(10); // will pause Zero, Leonardo, etc until serial console opens
 
   gps.begin(9600);
 
   if (!ism330dhcx.begin_I2C())
   {
     Serial.println("Failed to find ISM330DHCX chip");
-    while (1) ;
+    for (;;)
+      ;
   }
 
   Serial.println("ISM330DHCX Found!");
@@ -33,7 +30,8 @@ void setup(void)
   if (!lis3mdl.begin_I2C())
   {
     Serial.println("Failed to find LIS3MDL chip");
-    while (1) ;
+    for (;;)
+      ;
   }
   Serial.println("LIS3MDL Found!");
 
@@ -56,19 +54,28 @@ void loop()
   sensors_event_t compass;
   lis3mdl.getEvent(&compass);
 
-  while(gps.read())
+  while (gps.read())
     if (gps.newNMEAreceived())
-      gps.parse(gps.lastNMEA()); 
-  
-  printf("Bx: %5.2f  By: %5.2f  Bz: %5.2f\n\n", compass.magnetic.x, compass.magnetic.y, compass.magnetic.z);
+      gps.parse(gps.lastNMEA());
 
-  printf("T: %5.2f\n", temp.temperature);
-  printf("Ax: %5.2f  Ay: %5.2f  Az: %5.2f  m/s^2\n", accel.acceleration.x, accel.acceleration.y, accel.acceleration.z);
-  printf("Rx: %5.2f  Ry: %5.2f  Rz: %5.2f rad/s\n\n", gyro.gyro.x, gyro.gyro.y, gyro.gyro.z);
+  printf("compass (uH): [%5.2f %5.2f %5.2f]\n\n",
+         compass.magnetic.x, compass.magnetic.y, compass.magnetic.z);
 
-  printf("Fix: %s\n", gps.fix? "true": "false");
-  printf("alt: %8.2f  lat: %8.2f  long: %8.2f\n", (float) gps.altitude, (float) gps.latitude, (float) gps.longitude);
-  printf("%2d-%02d-20%02d  %2d:%02d:%02d.%03d\n\n", gps.month, gps.day,gps.year, gps.hour,gps.minute,gps.seconds,gps.milliseconds);
+  printf("temperature (C): %5.2f\n", temp.temperature);
+  printf("acceleration (m/s^2): [%5.2f  %5.2f  %5.2f]\n",
+         accel.acceleration.x, accel.acceleration.y, accel.acceleration.z);
+  printf("rotation (rad/s): [%5.2f  %5.2f  %5.2f]\n\n",
+         gyro.gyro.x, gyro.gyro.y, gyro.gyro.z);
+
+  if (gps.fix)
+  {
+    printf("altitude (m): %8.2f\n", gps.altitude);
+    printf("latitude (deg): %8.2f  longitude: %8.2f\n", gps.latitude, gps.longitude); // not really degrees, but related.
+    printf("%2d-%02d-20%02d\n", gps.month, gps.day, gps.year);
+    printf("%2d:%02d:%02d.%03u UTC\n\n", gps.hour, gps.minute, gps.seconds, gps.milliseconds);
+  }
+  else
+    printf("no GPS fix\n");
 
   delay(100);
 }
