@@ -46,6 +46,8 @@ void setup(void)
 
 void loop()
 {
+  unsigned long loop_start_time = millis();
+
   sensors_event_t accel;
   sensors_event_t gyro;
   sensors_event_t temp;
@@ -58,24 +60,40 @@ void loop()
     if (gps.newNMEAreceived())
       gps.parse(gps.lastNMEA());
 
-  printf("compass (uH): [%5.2f %5.2f %5.2f]\n\n",
-         compass.magnetic.x, compass.magnetic.y, compass.magnetic.z);
+  unsigned long data_end_time = millis();
 
-  printf("temperature (C): %5.2f\n", temp.temperature);
-  printf("acceleration (m/s^2): [%5.2f  %5.2f  %5.2f]\n",
+  printf("compass: [%5.2f %5.2f %5.2f] (uH)\n\n",
+           compass.magnetic.x, compass.magnetic.y, compass.magnetic.z);
+
+  printf("temperature: %5.2f °C\n\n", temp.temperature);
+
+  printf("acceleration: [%5.2f  %5.2f  %5.2f] (m/s^2)\n\n",
          accel.acceleration.x, accel.acceleration.y, accel.acceleration.z);
-  printf("rotation (rad/s): [%5.2f  %5.2f  %5.2f]\n\n",
-         gyro.gyro.x, gyro.gyro.y, gyro.gyro.z);
+  
+  printf("rotation: [%5.2f  %5.2f  %5.2f] °/s\n\n",
+         gyro.gyro.x*180.0/PI, gyro.gyro.y*180.0/PI, gyro.gyro.z*180.0/PI);
 
   if (gps.fix)
   {
-    printf("altitude (m): %8.2f\n", gps.altitude);
-    printf("latitude (deg): %8.2f  longitude: %8.2f\n", gps.latitude, gps.longitude); // not really degrees, but related.
-    printf("%2d-%02d-20%02d\n", gps.month, gps.day, gps.year);
-    printf("%2d:%02d:%02d.%03u UTC\n\n", gps.hour, gps.minute, gps.seconds, gps.milliseconds);
+    printf("hdop: %7.3f\n", gps.HDOP);
+    printf("vdop: %7.3f\n", gps.VDOP);
+    printf("pdop: %9.5f\n\n", gps.PDOP);
+    printf("# satellites: %d\n\n", gps.satellites);
+    printf(" altitude: %8.2f m\n\n", gps.altitude);
+    printf(" latitude: %3d° %2d' %6.3f\"\n", (int) (gps.latitude/100), ((int) gps.latitude)%100, 60*(gps.latitude - (int)gps.latitude));
+    printf("longitude: %3d° %2d' %6.3f\"\n\n", (int) (gps.longitude/100), ((int) gps.longitude)%100, 60*(gps.longitude - (int)gps.longitude));
+    printf("date: %2d-%02d-20%02d UTC\n\n", gps.month, gps.day, gps.year);
+    printf("time: %2d:%02d:%02d.%03u UTC\n\n", gps.hour, gps.minute, gps.seconds, gps.milliseconds);
   }
   else
-    printf("no GPS fix\n");
+    printf("no GPS fix\n\n");
 
-  delay(100);
+  unsigned long loop_end_time = millis();
+ 
+  printf("       loop start time: %lu\n\n", loop_start_time);
+  printf("  data acquisition time: %3lu ms\n", data_end_time - loop_start_time);
+  printf("analysis and print time: %3lu ms\n", loop_end_time - data_end_time);
+  printf("        total loop time: %3lu ms\n\n\n", loop_end_time - loop_start_time);
+
+  delay(100 - (millis() - loop_start_time));
 }
